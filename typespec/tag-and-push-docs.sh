@@ -36,7 +36,6 @@ if [[ $RELEASE ]]; then
   tsp install
   tsp compile .
 
-  docker 
   docker build -t 128997144437.dkr.ecr.eu-west-2.amazonaws.com/wave/openapi:$TAG .
   docker push 128997144437.dkr.ecr.eu-west-2.amazonaws.com/wave/openapi:$TAG
 fi
