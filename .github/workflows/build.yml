@@ -56,7 +56,7 @@ jobs:
           GRADLE_OPTS: '-Dorg.gradle.daemon=false'
 
       - name: Tests
-        if: "!contains(github.event.head_commit.message, '[skip test]')"
+        if: "contains(github.event.head_commit.message, '[test]')"
         run: |
           make check
         env:
@@ -77,18 +77,7 @@ jobs:
         run: |
           sudo rm -rf /home/runner/work/wave/wave/build-workspace
 
-      - name: Release
-        if: "contains(github.event.head_commit.message, '[release]')"
-        run: |
-          bash tag-and-push.sh
-        env:
-          GRADLE_OPTS: '-Dorg.gradle.daemon=false'
-          AWS_ACCESS_KEY_ID: ${{secrets.TOWER_CI_AWS_ACCESS}}
-          AWS_SECRET_ACCESS_KEY: ${{secrets.TOWER_CI_AWS_SECRET}}
-          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          DOCKER_PAT: ${{ secrets.DOCKER_PAT }}
-          QUAY_PAT: ${{ secrets.QUAY_PAT }}
-          GITHUB_TOKEN: ${{ secrets.GH_SEQERA_TOKEN }}
+
 
       - name : Release docs
         if : "contains(github.event.head_commit.message, '[release docs]')"
@@ -98,19 +87,3 @@ jobs:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD : ${{ secrets.DOCKER_PASSWORD }}
           GITHUB_TOKEN : ${{ secrets.GH_SEQERA_TOKEN }}
-
-      - name: Publish tests report
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-reports-jdk-${{ matrix.java_version }}
-          path: |
-            **/build/reports/tests/test
-
-      - name : Publish code coverage report
-        if: success()
-        uses : actions/upload-artifact@v4
-        with :
-          name : code-coverage-reports-jdk-${{ matrix.java_version }}
-          path : |
-            **/build/reports/jacoco/test
