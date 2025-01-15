@@ -37,8 +37,6 @@ if [[ $RELEASE ]]; then
   tsp compile .
 
 
-  docker build -t docker.io/hrma017/openapi:$TAG .
-  echo "Build docker.io/hrma017/openapi:$TAG"
-  docker push docker.io/hrma017/openapi:$TAG
-  echo "Pushed docker.io/hrma017/openapi:$TAG"
+  docker build -t 128997144437.dkr.ecr.eu-west-2.amazonaws.com/wave/openapi:$TAG .
+  docker push 128997144437.dkr.ecr.eu-west-2.amazonaws.com/wave/openapi:$TAG
 fi
