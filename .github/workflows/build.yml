@@ -76,13 +76,3 @@ jobs:
         if: always()
         run: |
           sudo rm -rf /home/runner/work/wave/wave/build-workspace
-
-
-
-      - name : Release docs
-        if : "contains(github.event.head_commit.message, '[release docs]')"
-        run : |
-          bash typespec/tag-and-push-docs.sh
-        env :
-          AWS_ACCESS_KEY_ID : ${{secrets.AWS_ACCESS}}
-          AWS_SECRET_ACCESS_KEY : ${{secrets.AWS_SECRET}}
