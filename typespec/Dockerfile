@@ -1,5 +1,6 @@
 FROM nginx:alpine
 
+# Copy index.html and openapi.yaml to the Nginx html directory
 COPY index.html /usr/share/nginx/html/
 COPY tsp-output/@typespec/openapi3/openapi.yaml /usr/share/nginx/html/tsp-output/@typespec/openapi3/
 
@@ -9,11 +10,15 @@ EXPOSE 9080
 CMD echo "server { \
         listen 9080; \
         location /openapi { \
-                root /usr/share/nginx/html; \
-                index index.html; \
-                try_files /index.html =404; \
-            } \
-        root /usr/share/nginx/html; \
-        index index.html; \
-    }" >> /etc/nginx/conf.d/default.conf && \
+            root /usr/share/nginx/html; \
+            index index.html; \
+            try_files /index.html =404; \
+        } \
+        location / { \
+            root /usr/share/nginx/html; \
+            index index.html; \
+            try_files /index.html =404; \
+        } \
+    }" > /etc/nginx/conf.d/default.conf && \
     nginx -g 'daemon off;'
+
