@@ -11,7 +11,7 @@ CMD echo "server { \
         listen 9080; \
         location /openapi { \
             root /usr/share/nginx/html; \
-            try_files /tsp-output/@typespec/openapi3/openapi.yaml =404; \
+            try_files /usr/share/nginx/html/tsp-output/@typespec/openapi3/openapi.yaml =404; \
         } \
         location / { \
             root /usr/share/nginx/html; \
