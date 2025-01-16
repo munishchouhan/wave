@@ -29,6 +29,7 @@ RELEASE=${RELEASE:-$(git show -s --format='%s' | $SED -rn 's/.*\[(release docs)\
 
 if [[ $RELEASE ]]; then
   TAG=v$(cat VERSION)
+  cd typespec
   docker build -t 128997144437.dkr.ecr.eu-west-2.amazonaws.com/wave/openapi:$TAG .
   docker push 128997144437.dkr.ecr.eu-west-2.amazonaws.com/wave/openapi:$TAG
 fi
