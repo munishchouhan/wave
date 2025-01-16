@@ -9,8 +9,8 @@ EXPOSE 9080
 
 CMD echo "server { \
         listen 9080; \
-        location /openapi { \
-            index /usr/share/nginx/html; \
-        } \
-    }" > /etc/nginx/conf.d/default.conf && \
+        location / { \
+                root /usr/share/nginx/html; \
+            } \
+    }" >> /etc/nginx/conf.d/default.conf && \
     nginx -g 'daemon off;'
