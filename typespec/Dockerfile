@@ -13,6 +13,5 @@ CMD echo "server { \
                 index index.html; \
                 try_files /index.html =404; \
             } \
-        root /usr/share/nginx/html; \
     }" >> /etc/nginx/conf.d/default.conf && \
     nginx -g 'daemon off;'
