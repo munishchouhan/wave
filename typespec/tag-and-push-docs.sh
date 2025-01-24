@@ -30,6 +30,7 @@ RELEASE=${RELEASE:-$(git show -s --format='%s' | $SED -rn 's/.*\[(release docs)\
 if [[ $RELEASE ]]; then
   TAG=v$(cat VERSION)
   cd typespec
+  sed -i "s/version: 0.0.0/version: $VERSION/g" "tsp-output/@typespec/openapi3/openapi.yaml"
   docker build -t 128997144437.dkr.ecr.eu-west-2.amazonaws.com/wave/openapi:$TAG .
   docker push 128997144437.dkr.ecr.eu-west-2.amazonaws.com/wave/openapi:$TAG
 fi
