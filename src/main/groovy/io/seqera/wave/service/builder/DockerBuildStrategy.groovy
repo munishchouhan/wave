@@ -92,7 +92,7 @@ class DockerBuildStrategy extends BuildStrategy {
 
     protected List<String> cmdForBuildkit(String name, BuildRequest req, Map<String, String> env = System.getenv()) {
         //checkout the documentation here to know more about these options https://github.com/moby/buildkit/blob/master/docs/rootless.md#docker
-        final wrapper = ['docker',
+        final wrapper = ['podman',
                          'run',
                          '--detach',
                          '--name', name,
@@ -120,7 +120,7 @@ class DockerBuildStrategy extends BuildStrategy {
     }
 
     protected List<String> cmdForSingularity(String name, BuildRequest req, Map<String, String> env = System.getenv() ) {
-        final wrapper = ['docker',
+        final wrapper = ['podman',
                          'run',
                          '--detach',
                          '--name', name,

@@ -80,7 +80,7 @@ class DockerMirrorStrategy extends MirrorStrategy {
 
     protected List<String> mirrorCmd(String name, String mirrorId, String credsFile, Map<String, String> env = System.getenv()) {
         //checkout the documentation here to know more about these options https://github.com/moby/buildkit/blob/master/docs/rootless.md#docker
-        final wrapper = ['docker',
+        final wrapper = ['podman',
                          'run',
                         '--detach',
                         '--privileged',

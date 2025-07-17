@@ -69,7 +69,7 @@ class DockerJobOperation implements JobOperation {
     @Override
     void cleanup(String operationName) {
         final cli = new ArrayList<String>()
-        cli.add('docker')
+        cli.add('podman')
         cli.add('rm')
         cli.add(operationName)
 
@@ -95,7 +95,7 @@ class DockerJobOperation implements JobOperation {
 
     private static State getDockerContainerState(String containerName) {
         final cli = new ArrayList<String>()
-        cli.add('docker')
+        cli.add('podman')
         cli.add('inspect')
         cli.add('--format')
         cli.add('{{.State.Status}},{{.State.ExitCode}}')
@@ -111,7 +111,7 @@ class DockerJobOperation implements JobOperation {
 
     private static String getDockerContainerLogs(String containerName) {
         final cli = new ArrayList<String>()
-        cli.add('docker')
+        cli.add('podman')
         cli.add('logs')
         cli.add(containerName)
 
