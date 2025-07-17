@@ -1,5 +1,6 @@
 name: Wave CI
 on:
+  workflow_dispatch:
   push:
     branches:
       - '**'
