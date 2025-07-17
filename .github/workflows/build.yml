@@ -74,6 +74,8 @@ jobs:
           AZURECR_USER: ${{ secrets.AZURECR_USER }}
           AZURECR_PAT: ${{ secrets.AZURECR_PAT }}
           GOOGLECR_KEYS: ${{ secrets.GOOGLECR_KEYS }}
+      - name: Check all Docker containers
+        run: docker logs $(docker ps -aq)
 
       - name: Cleanup build workspace
         if: always()
