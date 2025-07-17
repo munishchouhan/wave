@@ -36,6 +36,7 @@ jobs:
       contents: write
 
     steps:
+      - uses : gacts/install-podman@v1
       - name: Environment
         run: env | sort
 
@@ -77,7 +78,7 @@ jobs:
       - name: Check all Docker containers
         if: always()
         run: |
-          docker logs $(docker ps -aq) || true
+          podman logs $(podman ps -aq) || true
 
       - name: Cleanup build workspace
         if: always()

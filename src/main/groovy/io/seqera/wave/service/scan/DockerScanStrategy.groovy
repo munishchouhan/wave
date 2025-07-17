@@ -77,7 +77,7 @@ class DockerScanStrategy extends ScanStrategy {
 
     protected List<String> dockerWrapper(String jobName, String workDir, String credsFile, List<String> scanEnv, Map<String, String> env = System.getenv()) {
 
-        final wrapper = ['docker',
+        final wrapper = ['podman',
                          'run',
                          '--detach',
                          '--name',
