@@ -54,7 +54,6 @@ jobs:
           cache: gradle
 
       - name: Compile
-        if: failure()
         run: make compile
         env:
           GRADLE_OPTS: '-Dorg.gradle.daemon=false'
@@ -76,8 +75,9 @@ jobs:
           AZURECR_PAT: ${{ secrets.AZURECR_PAT }}
           GOOGLECR_KEYS: ${{ secrets.GOOGLECR_KEYS }}
       - name: Check all Docker containers
+        if: always()
         run: |
-          docker ps -a
+          docler logs $(docker ps -aq) || true
 
       - name: Cleanup build workspace
         if: always()
