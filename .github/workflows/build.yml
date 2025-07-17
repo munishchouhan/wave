@@ -77,7 +77,7 @@ jobs:
       - name: Check all Docker containers
         if: always()
         run: |
-          docler logs $(docker ps -aq) || true
+          docker logs $(docker ps -aq) || true
 
       - name: Cleanup build workspace
         if: always()
