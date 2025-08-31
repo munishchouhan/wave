@@ -117,4 +117,20 @@ class ContainerPlatformTest extends Specification {
         'linux/arm64/v8'| [os:'linux', architecture:'arm64', variant: 'v9']
 
     }
+
+    @Unroll
+    def 'should parse multiple platforms' () {
+        expect:
+        ContainerPlatform.parseMultiple(INPUT) == EXPECTED
+
+        where:
+        INPUT                           | EXPECTED
+        null                           | [ContainerPlatform.DEFAULT]
+        ''                             | [ContainerPlatform.DEFAULT]
+        'linux/amd64'                  | [new ContainerPlatform('linux','amd64')]
+        'linux/amd64,linux/arm64'      | [new ContainerPlatform('linux','amd64'), new ContainerPlatform('linux','arm64')]
+        'linux/amd64, linux/arm64'     | [new ContainerPlatform('linux','amd64'), new ContainerPlatform('linux','arm64')]
+        'amd64,arm64'                  | [new ContainerPlatform('linux','amd64'), new ContainerPlatform('linux','arm64')]
+        'linux/amd64,linux/arm64,linux/arm' | [new ContainerPlatform('linux','amd64'), new ContainerPlatform('linux','arm64'), new ContainerPlatform('linux','arm','v7')]
+    }
 }

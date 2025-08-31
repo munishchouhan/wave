@@ -264,4 +264,44 @@ class BuildStrategyTest extends Specification {
         null            | 'estargz'         | 1     | true  | 'type=registry,image-manifest=true,ref=reg.io/wave/build/cache:c168dba125e28777,mode=max,ignore-error=true,oci-mediatypes=true,compression=estargz,compression-level=1,force-compression=true'
         'estargz'       | 'gzip'            | 2     | true  | 'type=registry,image-manifest=true,ref=reg.io/wave/build/cache:c168dba125e28777,mode=max,ignore-error=true,oci-mediatypes=true,compression=estargz,compression-level=2,force-compression=true'
     }
+
+    def 'should get multi-platform buildkit command' () {
+        given:
+        def req = new BuildRequest(
+                containerId: 'c168dba125e28777',
+                buildId: 'bd-c168dba125e28777_1',
+                workspace: Path.of('/work/foo'),
+                platform: ContainerPlatform.of('linux/amd64'),
+                targetImage: 'quay.io/wave:c168dba125e28777',
+                cacheRepository: 'reg.io/wave/build/cache',
+        )
+        def platforms = [
+                ContainerPlatform.of('linux/amd64'),
+                ContainerPlatform.of('linux/arm64')
+        ]
+        def multiReq = new MultiPlatformBuildRequest(req, platforms)
+
+        when:
+        def cmd = strategy.dockerMultiPlatformLaunchCmd(multiReq)
+        then:
+        cmd == [
+                'build',
+                '--frontend',
+                'dockerfile.v0',
+                '--local',
+                'dockerfile=/work/foo/bd-c168dba125e28777_1',
+                '--opt',
+                'filename=Containerfile',
+                '--local',
+                'context=/work/foo/bd-c168dba125e28777_1/context',
+                '--output',
+                'type=image,name=quay.io/wave:c168dba125e28777,push=true,oci-mediatypes=true',
+                '--opt',
+                'platform=linux/amd64,linux/arm64',
+                '--export-cache',
+                'type=registry,image-manifest=true,ref=reg.io/wave/build/cache:c168dba125e28777,mode=max,ignore-error=true,oci-mediatypes=true',
+                '--import-cache',
+                'type=registry,ref=reg.io/wave/build/cache:c168dba125e28777'
+        ]
+    }
 }

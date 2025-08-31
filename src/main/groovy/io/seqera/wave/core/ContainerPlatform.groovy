@@ -84,6 +84,19 @@ class ContainerPlatform {
         return value ? of(value) : defaultPlatform
     }
 
+    /**
+     * Parse multiple platforms from a comma-separated string
+     * @param value A comma-separated list of platforms e.g. "linux/amd64,linux/arm64"
+     * @return A list of ContainerPlatform objects
+     */
+    static List<ContainerPlatform> parseMultiple(String value) {
+        if( !value )
+            return [DEFAULT]
+        
+        final platforms = value.split(',').collect { it.trim() }
+        return platforms.collect { of(it) }
+    }
+
     static ContainerPlatform of(String value) {
         if( !value )
             throw new BadRequestException("Missing container platform attribute")

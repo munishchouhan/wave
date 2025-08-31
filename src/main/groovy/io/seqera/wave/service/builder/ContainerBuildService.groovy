@@ -42,6 +42,16 @@ interface ContainerBuildService {
     BuildTrack buildImage(BuildRequest request)
 
     /**
+     * Build a multi-platform container image for the given {@link MultiPlatformBuildRequest}
+     *
+     * @param request
+     *      A {@link MultiPlatformBuildRequest} modelling the multi-platform build request
+     * @return
+     *      The build track for the multi-platform image
+     */
+    BuildTrack buildMultiPlatformImage(MultiPlatformBuildRequest request)
+
+    /**
      * Get a completable future that holds the build result
      *
      * @param targetImage
