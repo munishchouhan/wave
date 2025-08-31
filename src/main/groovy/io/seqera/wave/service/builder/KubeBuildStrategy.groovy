@@ -81,6 +81,27 @@ class KubeBuildStrategy extends BuildStrategy {
         }
     }
 
+    /**
+     * Build a multi-platform container image
+     */
+    @TraceElapsedTime(thresholdMillis = '${wave.trace.k8s.threshold:200}')
+    void buildMultiPlatform(String jobName, MultiPlatformBuildRequest multiReq) {
+        final req = multiReq.baseRequest
+        final Path configFile = req.configJson ? req.workDir.resolve('config.json') : null
+
+        try {
+            final buildImage = getBuildImage(req)
+            final buildCmd = dockerMultiPlatformLaunchCmd(multiReq)
+            final timeout = req.maxDuration ?: buildConfig.defaultTimeout
+            // For multi-platform builds, use selector for the primary platform
+            final selector = getSelectorLabel(multiReq.platforms[0], nodeSelectorMap)
+            k8sService.launchBuildJob(jobName, buildImage, buildCmd, req.workDir, configFile, timeout, selector)
+        }
+        catch (ApiException e) {
+            throw new BadRequestException("Unexpected multi-platform build failure - ${e.responseBody}", e)
+        }
+    }
+
     protected String getBuildImage(BuildRequest buildRequest){
         if( buildRequest.formatDocker() ) {
             return buildConfig.buildkitImage

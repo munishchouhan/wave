@@ -386,6 +386,20 @@ class ContainerController {
         )
     }
 
+    /**
+     * Create a multi-platform build request from a container token request
+     */
+    MultiPlatformBuildRequest makeMultiPlatformBuildRequest(SubmitContainerTokenRequest req, PlatformId identity, String ip) {
+        // Parse multiple platforms from the containerPlatform field
+        final platforms = ContainerPlatform.parseMultiple(req.containerPlatform)
+        
+        // Create the base build request using the first platform for compatibility
+        final baseBuildReq = makeBuildRequest(req, identity, ip)
+        
+        // Return multi-platform wrapper
+        return new MultiPlatformBuildRequest(baseBuildReq, platforms)
+    }
+
     protected BuildTrack checkBuild(BuildRequest build, boolean dryRun) {
         final digest = registryProxyService.getImageDigest(build)
         // check for dry-run execution
@@ -403,6 +417,26 @@ class ContainerController {
         }
         else {
             return buildService.buildImage(build)
+        }
+    }
+
+    protected BuildTrack checkMultiPlatformBuild(MultiPlatformBuildRequest multiReq, boolean dryRun) {
+        final digest = registryProxyService.getImageDigest(multiReq.baseRequest)
+        // check for dry-run execution
+        if( dryRun ) {
+            log.debug "== Dry-run multi-platform build request: $multiReq"
+            final dryId = multiReq.baseRequest.containerId +  BuildRequest.SEP + '0'
+            final cached = digest!=null
+            return new BuildTrack(dryId, multiReq.baseRequest.targetImage, cached, true)
+        }
+        // check for existing image
+        if( digest ) {
+            log.debug "== Found cached multi-platform build for request: $multiReq"
+            final cache = persistenceService.loadBuildSucceed(multiReq.baseRequest.targetImage, digest)
+            return new BuildTrack(cache?.buildId, multiReq.baseRequest.targetImage, true, true)
+        }
+        else {
+            return buildService.buildMultiPlatformImage(multiReq)
         }
     }
 
@@ -447,16 +481,34 @@ class ContainerController {
         Boolean succeeded
         if( req.containerFile ) {
             if( !buildService ) throw new UnsupportedBuildServiceException()
-            final build = makeBuildRequest(req, identity, ip)
-            final track = checkBuild(build, req.dryRun)
-            targetImage = track.targetImage
-            targetContent = build.containerFile
-            condaContent = build.condaFile
-            buildId = track.id
-            buildNew = !track.cached
-            scanId = build.scanId
-            succeeded = track.succeeded
-            type = ContainerRequest.Type.Build
+            
+            // Check if this is a multi-platform request
+            final platforms = ContainerPlatform.parseMultiple(req.containerPlatform)
+            if (platforms.size() > 1) {
+                // Multi-platform build
+                final multiReq = makeMultiPlatformBuildRequest(req, identity, ip)
+                final track = checkMultiPlatformBuild(multiReq, req.dryRun)
+                targetImage = track.targetImage
+                targetContent = multiReq.baseRequest.containerFile
+                condaContent = multiReq.baseRequest.condaFile
+                buildId = track.id
+                buildNew = !track.cached
+                scanId = multiReq.baseRequest.scanId
+                succeeded = track.succeeded
+                type = ContainerRequest.Type.Build
+            } else {
+                // Single platform build (existing logic)
+                final build = makeBuildRequest(req, identity, ip)
+                final track = checkBuild(build, req.dryRun)
+                targetImage = track.targetImage
+                targetContent = build.containerFile
+                condaContent = build.condaFile
+                buildId = track.id
+                buildNew = !track.cached
+                scanId = build.scanId
+                succeeded = track.succeeded
+                type = ContainerRequest.Type.Build
+            }
         }
         else if( req.mirror ) {
             if( !mirrorService ) throw new UnsupportedMirrorServiceException()
