@@ -79,6 +79,37 @@ abstract class BuildStrategy {
         return result
     }
 
+    /**
+     * Generate build command for multi-platform builds
+     */
+    protected List<String> dockerMultiPlatformLaunchCmd(MultiPlatformBuildRequest multiReq) {
+        final req = multiReq.baseRequest
+        final result = new ArrayList(10)
+        result
+                << "build"
+                << "--frontend"
+                << "dockerfile.v0"
+                << "--local"
+                << "dockerfile=$req.workDir".toString()
+                << "--opt"
+                << "filename=Containerfile"
+                << "--local"
+                << "context=$req.workDir/context".toString()
+                << "--output"
+                << outputOpts(req, buildConfig)
+                << "--opt"
+                << "platform=${multiReq.platformString}".toString()
+
+        if( req.cacheRepository ) {
+            result << "--export-cache"
+            result << cacheOpts(req, buildConfig)
+            result << "--import-cache"
+            result << "type=registry,ref=$req.cacheRepository:$req.containerId".toString()
+        }
+
+        return result
+    }
+
 
     static protected String compressOpts(BuildRequest req, BuildConfig config) {
         final result = new StringBuilder()

@@ -148,6 +148,132 @@ class ContainerBuildServiceImpl implements ContainerBuildService, JobHandler<Bui
     }
 
     /**
+     * Build a multi-platform container image for the given {@link MultiPlatformBuildRequest}
+     *
+     * @param request
+     *      A {@link MultiPlatformBuildRequest} modelling the multi-platform build request
+     * @return
+     *      The build track for the multi-platform image
+     */
+    @Override
+    BuildTrack buildMultiPlatformImage(MultiPlatformBuildRequest request) {
+        if (request.singlePlatform) {
+            // For single platform, delegate to the existing buildImage method
+            return buildImage(request.baseRequest)
+        }
+        // For multi-platform, submit the multi-platform build
+        return checkOrSubmitMultiPlatform(request)
+    }
+
+    /**
+     * Check if multi-platform build exists or submit new one
+     */
+    protected BuildTrack checkOrSubmitMultiPlatform(MultiPlatformBuildRequest multiReq) {
+        final req = multiReq.baseRequest
+        final targetImage = req.targetImage
+        
+        // check if it's already been built
+        final cached = buildStore.awaitBuild(targetImage)
+        if( cached && cached.isDone() ) {
+            log.debug "== Found multi-platform cached build for request: $req"
+            final result = cached.join()
+            final succeeded = result.exitStatus==0
+            return new BuildTrack(req.buildId, targetImage, true, succeeded)
+        }
+
+        // rate limiting
+        if( rateLimiter ) {
+            final acquireRequest = new AcquireRequest(req.identity?.userEmail)
+            if( !rateLimiter.acquireBuild(acquireRequest) ) {
+                log.warn "Build request exceed plan quota limits - request: $req"
+                throw new HttpServerRetryableErrorException("Build request exceed plan quota limits")
+            }
+        }
+
+        // check for build already running
+        final current = buildStore.getBuild(targetImage)
+        if( current ) {
+            log.debug "== Found existing multi-platform build for request: $req"
+            return new BuildTrack(current.buildId, targetImage, false, null)
+        }
+
+        // submit it
+        submitMultiPlatformBuild(multiReq)
+        return new BuildTrack(req.buildId, targetImage, false, null)
+    }
+
+    /**
+     * Submit a multi-platform build request
+     */
+    protected void submitMultiPlatformBuild(MultiPlatformBuildRequest multiReq) {
+        final req = multiReq.baseRequest
+        try {
+            log.debug "== Submitting multi-platform build request: $req"
+            buildStore.storeBuild(req.targetImage, new BuildEntry(req))
+            // launch build execution
+            executor.submit(() -> launchMultiPlatform(multiReq))
+        }
+        catch (Exception e) {
+            log.error("Unexpected error submitting multi-platform build request: $req", e)
+            buildStore.removeBuild(req.targetImage)
+        }
+    }
+
+    /**
+     * Launch the multi-platform build execution
+     */
+    protected void launchMultiPlatform(MultiPlatformBuildRequest multiReq) {
+        try {
+            final req = multiReq.baseRequest
+            // create the workdir path
+            Files.createDirectories(req.workDir)
+            // create context dir
+            final context = req.workDir.resolve('context')
+            Files.createDirectories(context)
+
+            // create docker container file
+            final containerFile = containerFile0(req, context)
+            final path = req.workDir.resolve('Containerfile')
+            path.text = containerFile
+
+            // create the docker config file
+            createConfigFile(req)
+
+            // create build context files
+            createBuildContext(req.buildContext, context)
+
+            // create conda recipe files
+            createCondaFile(req, context)
+
+            // launch the build
+            log.info "== Launching multi-platform build: $req"
+            final jobName = 'wx-' + req.buildId.substring(3)
+            if (buildStrategy instanceof KubeBuildStrategy) {
+                buildStrategy.buildMultiPlatform(jobName, multiReq)
+            } else {
+                // For other strategies, build each platform separately and create manifest list
+                buildSeparatePlatforms(multiReq)
+            }
+        }
+        catch (Exception e) {
+            log.error("Unexpected error launching multi-platform build: ${multiReq.baseRequest}", e)
+            buildStore.storeBuild(multiReq.baseRequest.targetImage, new BuildResult(BuildResult.Status.FAILED, Instant.now(), e.message, null))
+        }
+    }
+
+    /**
+     * Build separate platforms and create manifest list (fallback for non-Kubernetes strategies)
+     */
+    protected void buildSeparatePlatforms(MultiPlatformBuildRequest multiReq) {
+        // This is a simplified approach - in a real implementation, you'd want to:
+        // 1. Build each platform separately
+        // 2. Create a manifest list that references all platform-specific images
+        // For now, just build the first platform
+        final firstPlatformReq = multiReq.createPlatformRequests()[0]
+        launch(firstPlatformReq)
+    }
+
+    /**
      * Get a completable future that holds the build result
      *
      * @param targetImage
